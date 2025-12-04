@@ -200,7 +200,7 @@ app.get('/auth/google/callback',
     })
   
     // Successful authentication, redirect to your desired route
-   res.redirect(`https://alvent.netlify.app/OnboardingMain/?token=${token}`);
+   res.redirect(`https://myalvent.com/OnboardingMain/?token=${token}`);
 
   } catch (error) {
     console.error('Authentication error:', error);
@@ -608,7 +608,7 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
       {
         email,
         amount: calculatedTotal * 100,
-        callback_url: "https://alvent.netlify.app"
+        callback_url: "https://myalvent.com/"
       },
       {
         headers: {
