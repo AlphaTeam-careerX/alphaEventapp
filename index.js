@@ -52,13 +52,19 @@ dotenv.config()
 //   credentials: false,
 // };
 const corsOptions = {
-  origin: ["https://alvent.netlify.app", "http://localhost:5173"],
+  origin: ["https://alvent.netlify.app", "http://localhost:5173","https://myalvent.com"],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,  // allows cookies/headers if you use them
 };
 
 // app.use(cors(corsOptions));
 // app.options("*", cors(corsOptions));
+// Middleware to log incoming origin
+app.use((req, res, next) => {
+  console.log("Incoming request origin:", req.headers.origin);
+  next();
+});
+
 
 
 app.use(cors(corsOptions));
