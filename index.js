@@ -21,6 +21,8 @@ const GEO_NAMES_USERNAME = 'ALVENT';
 const cloudinary = require("cloudinary").v2;
 const {Pool} =require("pg")
 const crypto = require('crypto');
+// const dns = require("dns");
+// dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 const fs = require('fs');
 //multer().none()
@@ -52,7 +54,7 @@ dotenv.config()
 //   credentials: false,
 // };
 const corsOptions = {
-  origin: ["https://alvent.netlify.app", "http://localhost:5174","https://myalvent.com"],
+  origin: ["https://alvent.netlify.app", "http://localhost:5174","https://myalvent.com","http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,  // allows cookies/headers if you use them
 };
