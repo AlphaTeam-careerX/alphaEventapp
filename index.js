@@ -241,6 +241,7 @@ const initiatewithDrawFunds=require("./routes/financeRout")
 const approveWithdrawal=require("./routes/financeRout")
 const withdrawalHistory=require("./routes/financeRout")
 const allSubscribers=require("./routes/sunbscribersRout")
+const allEvents=require("./routes/allEventzRoute")
 // app.use(checkSession)
 // app.use(logActivity)
 //ROUTERS
@@ -274,6 +275,7 @@ app.use("/api",initiatewithDrawFunds);// WITHDRAW FUNDS API
 app.use("/api",approveWithdrawal);// ADMIN APPROVE WITHDRAWAL API
 app.use("/api",withdrawalHistory);// WITHDRAWAL HISTORY API
 app.use("/api",allSubscribers);// GET ALL SUBSCRIBERS API
+app.use("/api",allEvents)
 
 app.get('/userInfo', async (req, res) => {
   try {
