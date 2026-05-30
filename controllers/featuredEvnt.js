@@ -41,6 +41,7 @@ const fetureventFXN=async(req,res)=>{
         eventTitle: event.eventTitle,
         eventImgURL: event.eventImgURL,
         eventDate: new Date(event.eventDate.eventEnd).toLocaleDateString("en-US"),
+        eventCategory: event.eventCategory,
         venueInformation: event.venueInformation?.address || "Not Provided",
         ticketpriceMIN,
         ticketpriceMAX,
