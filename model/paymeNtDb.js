@@ -14,7 +14,10 @@ const paymentSchema= new mongoose.Schema({
     }
   ],
     email: {type: String,required: true},
+    user_Name:{type:String,required:false},
+    phoneNumber:{type:String,required:false,maxlength:10},
     totalPurchase: {type: Number,required: true,default:0},
+    serviceCharge:{type:Number,required:true,default:0},
     paymentStatus:{type:String,required:true,enum:["completed","pending","failed"],default:"pending"},
     payMethod:{type:String,default:"Paystack"},
     trnsctnDT:{type:Date,required:true}

@@ -21,8 +21,8 @@ const GEO_NAMES_USERNAME = 'ALVENT';
 const cloudinary = require("cloudinary").v2;
 const {Pool} =require("pg")
 const crypto = require('crypto');
-// const dns = require("dns");
-// dns.setServers(["8.8.8.8", "8.8.4.4"]);
+const dns = require("dns");
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 const fs = require('fs');
 //multer().none()
@@ -541,7 +541,7 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
   try {
     const { eventID } = req.params;
     // console.log(req.path)
-    const { tickets, email, totalPurchase } = req.body;
+    const { tickets, email,user_Name,phoneNumber, totalPurchase } = req.body;
 
     //if (!eventID || !tickets || !email) return res.status(400).json({ msg: "Missing required fields" });
 
@@ -583,6 +583,15 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
       const qty = Number(ticket.quantity) || 1;
       const price = ticketDetails.ticketPrice;
       calculatedTotal += price * qty;
+      //include 5% service charge in total
+      calculatedTotal_servicecharge = Math.round(calculatedTotal * 1.05 * 100) / 100;
+
+      console.log("Calculated Total with Service Charge:", calculatedTotal_servicecharge);
+
+      servicecharge = calculatedTotal_servicecharge - calculatedTotal;
+      console.log("Service Charge:", servicecharge);
+
+
 
       for (let i = 0; i < qty; i++) {
         const ticketID = await genTicketID();
@@ -599,7 +608,7 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
       }
     }
 
-    if (calculatedTotal !== parseInt(totalPurchase)) {
+    if (calculatedTotal_servicecharge !== parseInt(totalPurchase)) {
       return res.status(400).json({ msg: "Total cost mismatch" });
     }
 
@@ -607,13 +616,13 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
       await ticktModel.insertMany(freeTickets);
       return res.status(200).json({ msg: "Free tickets issued", tickets: freeTickets });
     }
-      if (calculatedTotal !== parseInt(totalPurchase, 10)) {
+      if (calculatedTotal_servicecharge !== parseInt(totalPurchase, 10)) {
         return res.status(400).json({ msg: "Total cost does not match the purchase amount" });
       }
     const response = await axios.post("https://api.paystack.co/transaction/initialize",
       {
         email,
-        amount: calculatedTotal * 100,
+        amount: calculatedTotal_servicecharge * 100,
         callback_url: "https://myalvent.com/"
       },
       {
@@ -629,8 +638,11 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
       paymentID: response.data.data.reference,
       eventID,
       email,
+      user_Name,
+      phoneNumber,
       tickets: paidTickets,
-      totalPurchase: calculatedTotal,
+      totalPurchase: calculatedTotal_servicecharge,
+      serviceCharge:servicecharge,
       trnsctnDT: new Date()
     });
     await ticketTxn.save();
@@ -641,6 +653,7 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
       userId:findevntID.userID,
       tickets: freeTickets,
       totalPurchase: 0,
+      serviceCharge: 0,
       purchaseDate: new Date()
     });
     // Calculate the total quantity of free tickets issued
@@ -672,14 +685,16 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
 app.post("/paystack/webhook", express.json(), async (req, res) => {
   try {
     const secret = process.env.PAYSTACK_SECRET_KEY;
+    const signature = req.headers['x-paystack-signature'];
 
     //  Validate signature
     const hash = crypto
       .createHmac('sha512', secret)
       .update(JSON.stringify(req.body))
       .digest('hex');
-
-    if (hash !== req.headers['x-paystack-signature']) {
+console.log("Calculated:", hash);
+    console.log("Received:", signature);
+    if (hash !== signature) {
        console.log(" InValid Paystack webhook received:", req.body.event);
       return res.sendStatus(401); // Unauthorized
       
