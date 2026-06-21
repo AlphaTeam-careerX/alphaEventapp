@@ -149,7 +149,8 @@ passport.use(new GoogleStrategy({
       userFollowCnt:0,
       crtdTketz:[],
       crtdTketCnt:0,
-      totalEarning:0
+      totalEarning:0,
+      withdrawableBalance:0
     })}
   };}
    
@@ -559,7 +560,8 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
     const { nanoid } = await import('nanoid');
     const createDT = new Date().toISOString().replace(/[-:.TZ]/g, '');
     const findORGID = await indiOrgModel.findOne({ userID: findevntID.userID });
-
+    // console.log("findORGID:",findORGID)
+    if(!findORGID){return res.status(404).json({msg:"ORGANIZER NOT FOUND"})}
     const genTicketID = async () => {
       const prefix = findORGID?.IndName?.firstName?.slice(0, 3).toUpperCase() || "ALV";
       return `${prefix}-${createDT}-${nanoid(7)}`;
@@ -570,7 +572,9 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
 
     for (const ticket of tickets) {
       const findevntID = await eventModel.findOne({ eventID });
+      console.log("findevntID:",findevntID)
       const ticketDetails = findevntID.tickets.find(t => t._id.toString() === ticket._id);
+      console.log("TICKET DETAILS:",ticketDetails)
       const totalQty = tickets.reduce((sum, ticket) => sum + (ticket.quantity), 0);
       
       if (!findevntID) return res.status(404).json({ msg: "Event not found" });
@@ -732,12 +736,13 @@ console.log("Calculated:", hash);
             },
             {
               $inc: {
-                totalEarning: txn.totalPurchase
+                totalEarning: txn.totalPurchase,
+                withdrawableBalance: txn.totalPurchase
               }
             }
           );
     if(updateINDTOT){console.log("Total Updated")}
-      
+    
 
     //   Get event document
     const findevntID = await eventModel.findOne({ eventID: txn.eventID });

@@ -55,6 +55,7 @@ const totRevnTikFXN = async (req, res) => {
       msg: "SUCCESSFUL",
       totalTicketsSold,
       totalRevenue,
+      withdrawableBalance: organizer.withdrawableBalance,
       engagement:engagementRate,
       satisfaction:"0/0"// No logic for this yet
     });

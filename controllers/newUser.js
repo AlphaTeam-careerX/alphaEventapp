@@ -27,6 +27,7 @@ const newUserFXN=async(req,res)=>{
         //     return res.status(400).json({ msg: "Password must be at least 8 characters long and contain at least one letter and one number" });
         // }
         const existinUser = await allUserModel.findOne({email:email})
+        console.log("EXISTING USER:",existinUser)
           // console.log(existinUser)
         const hashPass= await bcrypt.hash(passWd,12)
       
@@ -80,7 +81,8 @@ const newUserFXN=async(req,res)=>{
           userFollowCnt:0,
           crtdTketz:[],
           crtdTketCnt:0,
-          totalEarning:0
+          totalEarning:0,
+          withdrawableBalance:0
         })
         if(!newUser)throw new Error("ERROR IN DATA SAVE");
        
