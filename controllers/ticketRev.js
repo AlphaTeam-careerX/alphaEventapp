@@ -15,7 +15,8 @@ const ticketRevFXN=async(req,res)=>{
         console.log("found in indUser")
         return res.status(200).json({
           msg: "SUCCESSFUL",
-          totalRevenue: findIndiUser.totalEarning
+          totalRevenue: findIndiUser.totalEarning,
+          withdrawableBalance: findIndiUser.withdrawableBalance
         })}else{console.log("found in Orguser")}
 
       // Search in orgORGmodel
