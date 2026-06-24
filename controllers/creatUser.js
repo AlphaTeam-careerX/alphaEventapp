@@ -26,7 +26,9 @@ const creatUserFXN=async(req,res)=>{
         userFollowCnt:0,
         crtdTketz:[],
         crtdTketCnt:0,
-        totalEarning:0})    
+        totalEarning:0,
+        withdrawableBalance:0
+      })    
     const updtRole= await allUserModel.findOneAndUpdate(
       {userID:findUser.userID},
       {role:"organizer"},
