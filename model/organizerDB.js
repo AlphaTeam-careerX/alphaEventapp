@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const allUserSchema= new mongoose.Schema({
     userID:{type:mongoose.Schema.Types.ObjectId,required:true},
     name:{type:String},
+    username:{type:String,unique:true},
     email:{type:String},
     googleId:{type:String},
     passWd:{type:String},

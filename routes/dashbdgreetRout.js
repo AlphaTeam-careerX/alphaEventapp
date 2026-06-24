@@ -1,0 +1,8 @@
+const {getDashboardFXN} = require("../controllers/dashbdgreetings")
+const {authFxn} = require('../middleware/auth');
+const express = require("express")
+const router = express.Router()
+
+router.get('/dashboard-greeting/:userID',authFxn,getDashboardFXN)
+
+module.exports = router

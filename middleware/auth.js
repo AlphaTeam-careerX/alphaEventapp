@@ -6,6 +6,7 @@ const {allUserModel,indiOrgModel} = require('../model/organizerDB')
 exports.authFxn = async (req, res, next) => {
   try {
     const tk = req.headers.authorization;
+    // console.log("TOKEN:", tk)
 
     if (!tk) {
       return res.status(401).json({ message: "Access Denied!" });
