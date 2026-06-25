@@ -13,7 +13,7 @@ const generateOTpw= function(){
 const newUserFXN=async(req,res)=>{
     try {
       const {name,email,passWd,confirmPassword}=req.body
-      // console.log(req.body)
+      console.log(req.body)
       
         if (!name || !email || !passWd) {
         return res.status(400).json({ msg: "All fields are required" });
