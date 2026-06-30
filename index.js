@@ -159,10 +159,13 @@ passport.use(new GoogleStrategy({
   return done(null,user)
 }));
 
+console.log("Google OAuth strategy configured successfully.");
 
 app.use(session({secret:`${process.env.cliscrtky}`,resave:false,saveUninitialized:true}));//configure session
 app.use(passport.initialize());//initialize passport and session
 app.use(passport.session())
+
+console.log("Passport initialized and session configured.");
 
 //serialize & deserialize user infomation
 passport.serializeUser((user,done)=>{
@@ -172,11 +175,23 @@ passport.deserializeUser(async(id,done)=>{
     const user = await o2authUser.findById(id)
     done(null,user)
 })
+
+console.log("Passport serialization and deserialization configured successfully.");
 // Route to initiate Google OAuth
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
+console.log("Google OAuth initiation route configured successfully.");
+
 // Google OAuth callback route
 app.get('/auth/google/callback',
+  (req, res, next) => {
+      if (req.query.code) {
+      // Decode the token code parameter to clean out %2F and similar anomalies
+      req.query.code = decodeURIComponent(req.query.code);
+      console.log("Decoded code parameter:", req.query.code);
+    }
+    next();
+  },
   passport.authenticate('google', { failureRedirect: '/' }),
   async(req, res) => {
     try {
@@ -201,7 +216,7 @@ app.get('/auth/google/callback',
       sessToken:token,
       loginRoute: 'google'
     })
-  
+  console.log("Session created successfully:", updateSession);
     // Successful authentication, redirect to your desired route
    res.redirect(`https://myalvent.com/OnboardingMain/?token=${token}`);
 
