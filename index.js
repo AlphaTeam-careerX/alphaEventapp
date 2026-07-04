@@ -93,26 +93,92 @@ const GEO_API_KEY = process.env.geoApiscrtky;
 app.listen(PORT,()=>{
     console.log(`This app now listen on ${PORT}`)
 });
+// passport.use(new GoogleStrategy({
+//   clientID:process.env.gClientID,
+//   clientSecret:process.env.cliscrtky,
+//   callbackURL: process.env.gcallbackURL
+
+// },async(accessToken,refreshToken,profile,done)=>{
+
+
+//     if (!profile) {
+//       return done(null, false, { message: "No profile returned from Google." });
+//   }
+
+
+//   const existingOAuthUser= await o2authUser.findOne({googleId:profile.id})
+
+//     const email = profile.emails[0].value;
+//     const existingManualUser = await allUserModel.findOne({ email });
+
+//     if (!existingOAuthUser && !existingManualUser) {
+//       const newUser=  await allUserModel.create({
+//         googleId: profile.id,
+//         userID: new mongoose.Types.ObjectId(),
+//         name: profile.displayName,
+//         role: "organizer",
+//         accntStatus: "active",
+//         lastLogin: new Date(),
+//         isEmailVerified: true,
+//         email: profile.emails[0].value,
+//       });
+
+
+//     if(!existingOAuthUser){
+//      await o2authUser.create({
+//      googleId:profile.id,
+//      name:profile.displayName,
+//      email:profile.emails[0].value
+//    })
+//    const existingIndiOrg = await indiOrgModel.findOne({ email: profile.emails[0].value });
+//    if (!existingIndiOrg){
+//     await indiOrgModel.create({
+//       IndName:{
+//               firstName: profile.displayName?.split(' ')[0] || '', 
+//               lastName: profile.displayName?.split(' ')[1] || ''
+//       },
+//       phnCntkt:{
+//         countryCd:'',
+//         phnNum:''
+//       },
+//       address:'',
+//       email:profile.emails[0].value,
+//       userID:newUser.userID,
+//       regDate:new Date(),
+//       userFollow:[],
+//       userFollowCnt:0,
+//       crtdTketz:[],
+//       crtdTketCnt:0,
+//       totalEarning:0,
+//       withdrawableBalance:0
+//     })}
+//   };}
+   
+//    const user = await o2authUser.findOne({ googleId: profile.id })
+
+//   return done(null,user)
+// }));
+
 passport.use(new GoogleStrategy({
-  clientID:process.env.gClientID,
-  clientSecret:process.env.cliscrtky,
+  clientID: process.env.gClientID,
+  clientSecret: process.env.cliscrtky,
   callbackURL: process.env.gcallbackURL
-
-},async(accessToken,refreshToken,profile,done)=>{
-
-
-    if (!profile) {
-      return done(null, false, { message: "No profile returned from Google." });
-  }
-
-
-  const existingOAuthUser= await o2authUser.findOne({googleId:profile.id})
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    if (!profile || !profile.emails || !profile.emails[0]) {
+      return done(null, false, { message: "No profile or email returned from Google." });
+    }
 
     const email = profile.emails[0].value;
-    const existingManualUser = await allUserModel.findOne({ email });
+    
+    // 1. Check if they have logged in with Google before
+    let oauthUser = await o2authUser.findOne({ googleId: profile.id });
+    // 2. Check if the core user record exists by email
+    let coreUser = await allUserModel.findOne({ email });
 
-    if (!existingOAuthUser && !existingManualUser) {
-      const newUser=  await allUserModel.create({
+    // Scenario A: Completely new user
+    if (!coreUser) {
+      coreUser = await allUserModel.create({
         googleId: profile.id,
         userID: new mongoose.Types.ObjectId(),
         name: profile.displayName,
@@ -120,52 +186,61 @@ passport.use(new GoogleStrategy({
         accntStatus: "active",
         lastLogin: new Date(),
         isEmailVerified: true,
-        email: profile.emails[0].value,
+        email: email,
       });
+    } else if (!coreUser.googleId) {
+      // Scenario B: User exists via manual signup, link their Google ID
+      coreUser.googleId = profile.id;
+      await coreUser.save();
+    }
 
+    // Scenario C: Create OAuth linking profile if missing
+    if (!oauthUser) {
+      oauthUser = await o2authUser.create({
+        googleId: profile.id,
+        name: profile.displayName,
+        email: email
+      });
+    }
 
-    if(!existingOAuthUser){
-     await o2authUser.create({
-     googleId:profile.id,
-     name:profile.displayName,
-     email:profile.emails[0].value
-   })
-   const existingIndiOrg = await indiOrgModel.findOne({ email: profile.emails[0].value });
-   if (!existingIndiOrg){
-    await indiOrgModel.create({
-      IndName:{
-              firstName: profile.displayName?.split(' ')[0] || '', 
-              lastName: profile.displayName?.split(' ')[1] || ''
-      },
-      phnCntkt:{
-        countryCd:'',
-        phnNum:''
-      },
-      address:'',
-      email:profile.emails[0].value,
-      userID:newUser.userID,
-      regDate:new Date(),
-      userFollow:[],
-      userFollowCnt:0,
-      crtdTketz:[],
-      crtdTketCnt:0,
-      totalEarning:0,
-      withdrawableBalance:0
-    })}
-  };}
-   
-   const user = await o2authUser.findOne({ googleId: profile.id })
+    // Scenario D: Create individual organizer profile if missing
+    const existingIndiOrg = await indiOrgModel.findOne({ email: email });
+    if (!existingIndiOrg) {
+      await indiOrgModel.create({
+        IndName: {
+          firstName: profile.displayName?.split(' ')[0] || '', 
+          lastName: profile.displayName?.split(' ')[1] || ''
+        },
+        phnCntkt: { countryCd: '', phnNum: '' },
+        address: '',
+        email: email,
+        userID: coreUser.userID,
+        regDate: new Date(),
+        userFollow: [],
+        userFollowCnt: 0,
+        crtdTketz: [],
+        crtdTketCnt: 0,
+        totalEarning: 0,
+        withdrawableBalance: 0
+      });
+    }
 
-  return done(null,user)
+    // Pass the authenticating OAuth user to Passport
+    return done(null, oauthUser);
+
+  } catch (error) {
+    console.error("Error in Google Strategy:", error);
+    return done(error, null);
+  }
 }));
 
-console.log("Google OAuth strategy configured successfully.");
+// console.log("Google OAuth strategy configured successfully.");
 
 app.use(session({secret:`${process.env.cliscrtky}`,resave:false,saveUninitialized:true}));//configure session
 app.use(passport.initialize());//initialize passport and session
 app.use(passport.session())
 
-console.log("Passport initialized and session configured.");
+// console.log("Passport initialized and session configured.");
 
 //serialize & deserialize user infomation
 passport.serializeUser((user,done)=>{
@@ -176,7 +251,12 @@ passport.deserializeUser(async(id,done)=>{
     done(null,user)
 })
 
-console.log("Passport serialization and deserialization configured successfully.");
+// console.log("Passport serialization and deserialization configured successfully.");
+// Catch-all landing or error route
+app.get('/', (req, res) => {
+    res.status(400).send('Authentication failed. Please try Manual logging.');
+});
+
 // Route to initiate Google OAuth
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
@@ -216,7 +296,7 @@ app.get('/auth/google/callback',
       sessToken:token,
       loginRoute: 'google'
     })
-  console.log("Session created successfully:", updateSession);
+  // console.log("Session created successfully:", updateSession);
     // Successful authentication, redirect to your desired route
    res.redirect(`https://myalvent.com/OnboardingMain/?token=${token}`);
 
