@@ -21,8 +21,13 @@ const GEO_NAMES_USERNAME = 'ALVENT';
 const cloudinary = require("cloudinary").v2;
 const {Pool} =require("pg")
 const crypto = require('crypto');
+<<<<<<< HEAD
 // const dns = require("dns");
 // dns.setServers(["8.8.8.8", "8.8.4.4"]);
+=======
+const dns = require("dns");
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+>>>>>>> a2e4e5fb2fa71583f7585f1cad961a2f1b90d9c7
 
 const fs = require('fs');
 //multer().none()
