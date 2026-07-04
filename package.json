@@ -29,7 +29,11 @@
     "multer": "^1.4.5-lts.1",
     "nanoid": "^5.0.8",
     "node-cron": "^4.0.6",
+<<<<<<< HEAD
+    "nodemailer": "^9.0.3",
+=======
     "nodemailer": "^8.0.7",
+>>>>>>> a2e4e5fb2fa71583f7585f1cad961a2f1b90d9c7
     "nodemon": "^3.1.7",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
