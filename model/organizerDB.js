@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const allUserSchema= new mongoose.Schema({
     userID:{type:mongoose.Schema.Types.ObjectId,required:true},
     name:{type:String},
+    username:{type:String,unique:true},
     email:{type:String},
     googleId:{type:String},
     passWd:{type:String},
@@ -57,7 +58,8 @@ const indiOrgSchema= new mongoose.Schema({
     userFollowCnt:{type:Number,default:0},//followers id count of organizer
     crtdTketz:[{type:String}],//all tickets created  by organizer
     crtdTketCnt:{type:Number,default:0},//all tickets count created  by organizer
-    totalEarning:{type:Number,default:0},//all tickets sales value earned by organizer to be updt
+    totalEarning:{type:Number,default:0},//all tickets sales value earned by organizer to be updt,
+    withdrawableBalance:{type:Number,default:0},//balance that can be withdrawn by organizer to be updt,
     bankDetails:{
         bankName:{type:String},
         accountNumber:{type:String},

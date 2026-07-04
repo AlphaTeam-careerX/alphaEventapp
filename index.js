@@ -21,6 +21,8 @@ const GEO_NAMES_USERNAME = 'ALVENT';
 const cloudinary = require("cloudinary").v2;
 const {Pool} =require("pg")
 const crypto = require('crypto');
+// const dns = require("dns");
+// dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 const fs = require('fs');
 //multer().none()
@@ -52,7 +54,7 @@ dotenv.config()
 //   credentials: false,
 // };
 const corsOptions = {
-  origin: ["https://alvent.netlify.app", "http://localhost:5174","https://myalvent.com"],
+  origin: ["https://alvent.netlify.app", "http://localhost:5174","https://myalvent.com","http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   credentials: true,  // allows cookies/headers if you use them
 };
@@ -147,7 +149,8 @@ passport.use(new GoogleStrategy({
       userFollowCnt:0,
       crtdTketz:[],
       crtdTketCnt:0,
-      totalEarning:0
+      totalEarning:0,
+      withdrawableBalance:0
     })}
   };}
    
@@ -156,10 +159,13 @@ passport.use(new GoogleStrategy({
   return done(null,user)
 }));
 
+console.log("Google OAuth strategy configured successfully.");
 
 app.use(session({secret:`${process.env.cliscrtky}`,resave:false,saveUninitialized:true}));//configure session
 app.use(passport.initialize());//initialize passport and session
 app.use(passport.session())
+
+console.log("Passport initialized and session configured.");
 
 //serialize & deserialize user infomation
 passport.serializeUser((user,done)=>{
@@ -169,11 +175,23 @@ passport.deserializeUser(async(id,done)=>{
     const user = await o2authUser.findById(id)
     done(null,user)
 })
+
+console.log("Passport serialization and deserialization configured successfully.");
 // Route to initiate Google OAuth
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
+console.log("Google OAuth initiation route configured successfully.");
+
 // Google OAuth callback route
 app.get('/auth/google/callback',
+  (req, res, next) => {
+      if (req.query.code) {
+      // Decode the token code parameter to clean out %2F and similar anomalies
+      req.query.code = decodeURIComponent(req.query.code);
+      console.log("Decoded code parameter:", req.query.code);
+    }
+    next();
+  },
   passport.authenticate('google', { failureRedirect: '/' }),
   async(req, res) => {
     try {
@@ -198,7 +216,7 @@ app.get('/auth/google/callback',
       sessToken:token,
       loginRoute: 'google'
     })
-  
+  console.log("Session created successfully:", updateSession);
     // Successful authentication, redirect to your desired route
    res.redirect(`https://myalvent.com/OnboardingMain/?token=${token}`);
 
@@ -239,6 +257,8 @@ const initiatewithDrawFunds=require("./routes/financeRout")
 const approveWithdrawal=require("./routes/financeRout")
 const withdrawalHistory=require("./routes/financeRout")
 const allSubscribers=require("./routes/sunbscribersRout")
+const allEvents=require("./routes/allEventzRoute")
+const dashbdgreetings=require("./routes/dashbdgreetRout")
 // app.use(checkSession)
 // app.use(logActivity)
 //ROUTERS
@@ -272,6 +292,8 @@ app.use("/api",initiatewithDrawFunds);// WITHDRAW FUNDS API
 app.use("/api",approveWithdrawal);// ADMIN APPROVE WITHDRAWAL API
 app.use("/api",withdrawalHistory);// WITHDRAWAL HISTORY API
 app.use("/api",allSubscribers);// GET ALL SUBSCRIBERS API
+app.use("/api",allEvents);
+app.use("/api",dashbdgreetings);// DASHBOARD GREETINGS API
 
 app.get('/userInfo', async (req, res) => {
   try {
@@ -537,7 +559,7 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
   try {
     const { eventID } = req.params;
     // console.log(req.path)
-    const { tickets, email, totalPurchase } = req.body;
+    const { tickets, email,user_Name,phoneNumber, totalPurchase } = req.body;
 
     //if (!eventID || !tickets || !email) return res.status(400).json({ msg: "Missing required fields" });
 
@@ -555,7 +577,8 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
     const { nanoid } = await import('nanoid');
     const createDT = new Date().toISOString().replace(/[-:.TZ]/g, '');
     const findORGID = await indiOrgModel.findOne({ userID: findevntID.userID });
-
+    // console.log("findORGID:",findORGID)
+    if(!findORGID){return res.status(404).json({msg:"ORGANIZER NOT FOUND"})}
     const genTicketID = async () => {
       const prefix = findORGID?.IndName?.firstName?.slice(0, 3).toUpperCase() || "ALV";
       return `${prefix}-${createDT}-${nanoid(7)}`;
@@ -566,7 +589,9 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
 
     for (const ticket of tickets) {
       const findevntID = await eventModel.findOne({ eventID });
+      console.log("findevntID:",findevntID)
       const ticketDetails = findevntID.tickets.find(t => t._id.toString() === ticket._id);
+      console.log("TICKET DETAILS:",ticketDetails)
       const totalQty = tickets.reduce((sum, ticket) => sum + (ticket.quantity), 0);
       
       if (!findevntID) return res.status(404).json({ msg: "Event not found" });
@@ -579,6 +604,15 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
       const qty = Number(ticket.quantity) || 1;
       const price = ticketDetails.ticketPrice;
       calculatedTotal += price * qty;
+      //include 5% service charge in total
+      calculatedTotal_servicecharge = Math.round(calculatedTotal * 1.05 * 100) / 100;
+
+      console.log("Calculated Total with Service Charge:", calculatedTotal_servicecharge);
+
+      servicecharge = calculatedTotal_servicecharge - calculatedTotal;
+      console.log("Service Charge:", servicecharge);
+
+
 
       for (let i = 0; i < qty; i++) {
         const ticketID = await genTicketID();
@@ -595,7 +629,7 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
       }
     }
 
-    if (calculatedTotal !== parseInt(totalPurchase)) {
+    if (calculatedTotal_servicecharge !== parseInt(totalPurchase)) {
       return res.status(400).json({ msg: "Total cost mismatch" });
     }
 
@@ -603,13 +637,13 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
       await ticktModel.insertMany(freeTickets);
       return res.status(200).json({ msg: "Free tickets issued", tickets: freeTickets });
     }
-      if (calculatedTotal !== parseInt(totalPurchase, 10)) {
+      if (calculatedTotal_servicecharge !== parseInt(totalPurchase, 10)) {
         return res.status(400).json({ msg: "Total cost does not match the purchase amount" });
       }
     const response = await axios.post("https://api.paystack.co/transaction/initialize",
       {
         email,
-        amount: calculatedTotal * 100,
+        amount: calculatedTotal_servicecharge * 100,
         callback_url: "https://myalvent.com/"
       },
       {
@@ -625,8 +659,11 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
       paymentID: response.data.data.reference,
       eventID,
       email,
+      user_Name,
+      phoneNumber,
       tickets: paidTickets,
-      totalPurchase: calculatedTotal,
+      totalPurchase: calculatedTotal_servicecharge,
+      serviceCharge:servicecharge,
       trnsctnDT: new Date()
     });
     await ticketTxn.save();
@@ -637,6 +674,7 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
       userId:findevntID.userID,
       tickets: freeTickets,
       totalPurchase: 0,
+      serviceCharge: 0,
       purchaseDate: new Date()
     });
     // Calculate the total quantity of free tickets issued
@@ -668,14 +706,16 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
 app.post("/paystack/webhook", express.json(), async (req, res) => {
   try {
     const secret = process.env.PAYSTACK_SECRET_KEY;
+    const signature = req.headers['x-paystack-signature'];
 
     //  Validate signature
     const hash = crypto
       .createHmac('sha512', secret)
       .update(JSON.stringify(req.body))
       .digest('hex');
-
-    if (hash !== req.headers['x-paystack-signature']) {
+console.log("Calculated:", hash);
+    console.log("Received:", signature);
+    if (hash !== signature) {
        console.log(" InValid Paystack webhook received:", req.body.event);
       return res.sendStatus(401); // Unauthorized
       
@@ -713,12 +753,13 @@ app.post("/paystack/webhook", express.json(), async (req, res) => {
             },
             {
               $inc: {
-                totalEarning: txn.totalPurchase
+                totalEarning: txn.totalPurchase,
+                withdrawableBalance: txn.totalPurchase
               }
             }
           );
     if(updateINDTOT){console.log("Total Updated")}
-      
+    
 
     //   Get event document
     const findevntID = await eventModel.findOne({ eventID: txn.eventID });

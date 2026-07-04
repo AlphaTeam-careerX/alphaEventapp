@@ -2,10 +2,10 @@ const {orgORGmodel,indiOrgModel,allUserModel}=require("../model/organizerDB")
 const eventModel=require("../model/eventsDB")
 const {landingtrdPagination,landingFtPagination}=require("../services/utilities")
 
-const fetureventFXN=async(req,res)=>{
+const alleventFXN=async(req,res)=>{
     try {
-    const {limit}=landingFtPagination(req)
-    const events = await eventModel.find().limit(limit);
+    // const {limit}=landingFtPagination(req)
+    const events = await eventModel.find()//.limit(limit);
     const userIds = events.map(event => event.userID);
     const organizers = await allUserModel.find({ userID: { $in: userIds } });
 
@@ -55,4 +55,4 @@ const fetureventFXN=async(req,res)=>{
     });
     } catch (error) {return res.status(400).json({msg:error.message})}
   };
-  module.exports=fetureventFXN
+  module.exports=alleventFXN

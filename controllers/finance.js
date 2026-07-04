@@ -110,7 +110,7 @@ exports.initiateWithdrawal = async (req, res) => {
 
 const withdrawalID = await generateUniqueWithdrawalID();
 
-    if (amount > indiUser.totalEarning) {
+    if (amount > indiUser.withdrawableBalance) {
 
        await Withdrawal.create({
         withdrawalID,
@@ -125,8 +125,8 @@ const withdrawalID = await generateUniqueWithdrawalID();
 
     // Optional: Ensure user leaves minimum balance (e.g. ₦1500)
      const minimumBalance = 1500;
-    // Check if amount exceeds totalEarning
-    if (indiUser.totalEarning - amount < minimumBalance) {
+    // Check if amount exceeds withdrawableBalance
+    if (indiUser.withdrawableBalance - amount < minimumBalance) {
       await Withdrawal.create({
         withdrawalID,
         user: indiUser._id,
@@ -142,8 +142,9 @@ const withdrawalID = await generateUniqueWithdrawalID();
     }
 
     // Check if it violates minimum balance rule
-    if (indiUser.totalEarning - amount < minimumBalance) {
+    if (indiUser.withdrawableBalance - amount < minimumBalance) {
       await Withdrawal.create({
+        withdrawalID,
         user: indiUser._id,
         amount,
         reason,
@@ -152,7 +153,7 @@ const withdrawalID = await generateUniqueWithdrawalID();
       });
 
       return res.status(400).json({
-        message: `You must leave at least ₦${minimumBalance} in your account. Maximum withdrawable amount is ₦${user.totalEarning - minimumBalance}.`
+        message: `You must leave at least ₦${minimumBalance} in your account. Maximum withdrawable amount is ₦${user.withdrawableBalance - minimumBalance}.`
       });
     }
 
@@ -337,13 +338,13 @@ exports.approveWithdrawal = async (req, res) => {
       }
 
 
-      user.totalEarning -= withdrawal.amount;
+      user.withdrawableBalance -= withdrawal.amount;
       await user.save();
 
       return res.status(200).json({
         message: "Withdrawal approved and completed",
         withdrawal,
-        newBalance: user.totalEarning
+        newBalance: user.withdrawableBalance
       });
 
     } else {
@@ -395,7 +396,8 @@ exports.approveWithdrawal = async (req, res) => {
 //Withdrawal history
 exports.getWithdrawals = async (req, res) => {
   try {
-    const userId = req.params;
+    const {userId} = req.params;
+    console.log("User ID from params:", userId);
     let { page = 1, limit = 10 } = req.query;
 
     // Parse pagination values to integers
