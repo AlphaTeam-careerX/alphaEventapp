@@ -32,6 +32,13 @@ const orgProfileFXN= async(req,res)=>{
         twitter: findUser.socialLinks.twitter || "KINDLY UPDATE YOUR TWITTER LINK",
         instagram: findUser.socialLinks.instagram || "KINDLY UPDATE YOUR INSTAGRAM LINK",
         website: findUser.socialLinks.website || "KINDLY UPDATE YOUR WEBSITE LINK"
+      },
+      notification_settings: {
+        email_update: findUser.notification_settings.email_update,
+        security_alert: findUser.notification_settings.security_alert,
+        marketing_email: findUser.notification_settings.marketing_email,
+        email_notification: findUser.notification_settings.email_notification,
+        sms_notification: findUser.notification_settings.sms_notification
       }
     };
     
@@ -47,7 +54,7 @@ const orgProfileFXN= async(req,res)=>{
   const orgProfileUpdateFXN=async(req,res)=>{
       try {
         const {userID}=req.params;
-        const {photo,name,email,phone,bio,orgName,address,socialLinks}=req.body;
+        const {photo,name,email,phone,bio,orgName,address,socialLinks,notification_settings}=req.body;
         const findUser= await indiOrgModel.findOne({userID:userID});
         if(!findUser){
           return res.status(404).json({msg:"USER NOT FOUND"})
@@ -72,6 +79,7 @@ const orgProfileFXN= async(req,res)=>{
         if (isMeaningful(orgName)) updateData.officialName = orgName;
         if (isMeaningful(address)) updateData.address = address;
         if (isMeaningful(socialLinks)) updateData.socialLinks = socialLinks;
+        if (isMeaningful(notification_settings)) updateData.notification_settings = notification_settings;
   
         const updatedProfile = await indiOrgModel.findOneAndUpdate(
           { userID: userID },
