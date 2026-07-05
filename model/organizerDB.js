@@ -66,6 +66,13 @@ const indiOrgSchema= new mongoose.Schema({
         accountHolderName:{type:String},
         accountType:{type:String,/*enum:["savings","current"]*/},
         bankSortCode:{type:String}
+    },
+    notification_settings:{
+        email_update:{type:Boolean,default:false},
+        security_alert:{type:Boolean,default:false},
+        marketing_email:{type:Boolean, default:false},
+        email_notification:{type:Boolean, default:false},
+        sms_notification:{type:Boolean, default:false}
     }
 
 },{timestamps:true})
