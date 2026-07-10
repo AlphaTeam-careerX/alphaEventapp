@@ -23,7 +23,9 @@ const purchaseListFXN = async (req, res) => {
 
     // 3. Fetch all payment records matching the event IDs
     const allPaymentRecords = await paymentModel.find({ eventID: { $in: eventIDs } });
-
+    if (!allPaymentRecords || allPaymentRecords.length === 0) {
+      return res.status(404).json({ msg: "No payment records found for this organizer's events" });
+    }
     
 
     // 4. Map payment records to the final line items output
@@ -32,7 +34,7 @@ const purchaseListFXN = async (req, res) => {
       eventName: eventNameMap.get(record.eventID)? eventNameMap.get(record.eventID) : "Unknown Event",
       ticketType: record.tickets ? record.tickets.map(t => t.ticketType).join(", ") : "",
       purchaseDate: moment(record.trnsctnDT).format('MMMM D'),
-      paymentStatus: record.paymentStatus,
+      paymentStatus: record.paymentStatus
     }));
 
     return res.status(200).json({
