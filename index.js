@@ -93,71 +93,6 @@ const GEO_API_KEY = process.env.geoApiscrtky;
 app.listen(PORT,()=>{
     console.log(`This app now listen on ${PORT}`)
 });
-// passport.use(new GoogleStrategy({
-//   clientID:process.env.gClientID,
-//   clientSecret:process.env.cliscrtky,
-//   callbackURL: process.env.gcallbackURL
-
-// },async(accessToken,refreshToken,profile,done)=>{
-
-
-//     if (!profile) {
-//       return done(null, false, { message: "No profile returned from Google." });
-//   }
-
-
-//   const existingOAuthUser= await o2authUser.findOne({googleId:profile.id})
-
-//     const email = profile.emails[0].value;
-//     const existingManualUser = await allUserModel.findOne({ email });
-
-//     if (!existingOAuthUser && !existingManualUser) {
-//       const newUser=  await allUserModel.create({
-//         googleId: profile.id,
-//         userID: new mongoose.Types.ObjectId(),
-//         name: profile.displayName,
-//         role: "organizer",
-//         accntStatus: "active",
-//         lastLogin: new Date(),
-//         isEmailVerified: true,
-//         email: profile.emails[0].value,
-//       });
-
-
-//     if(!existingOAuthUser){
-//      await o2authUser.create({
-//      googleId:profile.id,
-//      name:profile.displayName,
-//      email:profile.emails[0].value
-//    })
-//    const existingIndiOrg = await indiOrgModel.findOne({ email: profile.emails[0].value });
-//    if (!existingIndiOrg){
-//     await indiOrgModel.create({
-//       IndName:{
-//               firstName: profile.displayName?.split(' ')[0] || '', 
-//               lastName: profile.displayName?.split(' ')[1] || ''
-//       },
-//       phnCntkt:{
-//         countryCd:'',
-//         phnNum:''
-//       },
-//       address:'',
-//       email:profile.emails[0].value,
-//       userID:newUser.userID,
-//       regDate:new Date(),
-//       userFollow:[],
-//       userFollowCnt:0,
-//       crtdTketz:[],
-//       crtdTketCnt:0,
-//       totalEarning:0,
-//       withdrawableBalance:0
-//     })}
-//   };}
-   
-//    const user = await o2authUser.findOne({ googleId: profile.id })
-
-//   return done(null,user)
-// }));
 
 passport.use(new GoogleStrategy({
   clientID: process.env.gClientID,
@@ -339,6 +274,7 @@ const withdrawalHistory=require("./routes/financeRout")
 const allSubscribers=require("./routes/sunbscribersRout")
 const allEvents=require("./routes/allEventzRoute")
 const dashbdgreetings=require("./routes/dashbdgreetRout")
+const purchaseList=require("./routes/purchaseListRout")
 // app.use(checkSession)
 // app.use(logActivity)
 //ROUTERS
@@ -374,6 +310,7 @@ app.use("/api",withdrawalHistory);// WITHDRAWAL HISTORY API
 app.use("/api",allSubscribers);// GET ALL SUBSCRIBERS API
 app.use("/api",allEvents);
 app.use("/api",dashbdgreetings);// DASHBOARD GREETINGS API
+app.use("/api",purchaseList);// PURCHASE LIST API
 
 app.get('/userInfo', async (req, res) => {
   try {
@@ -953,31 +890,7 @@ app.get("/dashbdTicketCount/:userID",async(req,res)=>{
 })
 
 
-// //STRIPE API
-// app.post("/create-payment-intent", async (req, res) => {
-//   try {
-//     const { eventID, totalCost } = req.body;
 
-//     if (!eventID || totalCost === undefined) {
-//       return res.status(400).json({ msg: "Invalid data" });
-//     }
-
-//     // Skip payment intent creation for free events
-//     if (totalCost === 0) {
-//       return res.json({ clientSecret: null });
-//     }
-
-//     const paymentIntent = await stripe.paymentIntents.create({
-//       amount: totalCost * 100, // Stripe expects the amount in cents
-//       currency: "ngn",
-//       metadata: { eventID },
-//     });
-
-//     res.json({ clientSecret: paymentIntent.client_secret });
-//   } catch (error) {
-//     res.status(500).json({ msg: error.message });
-//   }
-// });
 
 // Fetch all countries
 app.get("/countries", async (req, res) => {
