@@ -576,7 +576,7 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
   try {
     const { eventID } = req.params;
     // console.log(req.path)
-    const { tickets, email,user_Name,phoneNumber, totalPurchase } = req.body;
+    const { tickets, email,userName,phoneNumber, totalPurchase } = req.body;
 
     //if (!eventID || !tickets || !email) return res.status(400).json({ msg: "Missing required fields" });
 
@@ -676,7 +676,7 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
       paymentID: response.data.data.reference,
       eventID,
       email,
-      user_Name,
+      user_Name:userName,
       phoneNumber,
       tickets: paidTickets,
       totalPurchase: calculatedTotal_servicecharge,
