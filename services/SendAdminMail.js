@@ -1,24 +1,17 @@
-const nodemailer = require("nodemailer");
+// const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
-
+const {Resend} = require("resend")
+const resendClient = new Resend(process.env.RESEND_API_backend);
 // Load environment variables
 dotenv.config();
 
 const sendAdminEmail = async ({ name, email, amount, reason, withdrawalID }) => {
   try {
-    const botask = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.botMailer,
-        pass: process.env.botMailpwd,
-      },
-    });
-
-    const mailOptions = {
-      from: `"Withdrawal Alert" <${process.env.botMailer}>`,
-      to: "gpittaz67@gmail.com",
-      subject: "Withdrawal Request Submitted",
-      html: `<!DOCTYPE html>
+    await resendClient.emails.send({
+        from: `"Withdrawal Alert" <${process.env.botMailer}>`,
+        to: "gpittaz67@gmail.com",
+        subject: "Withdrawal Request Submitted",
+        html: `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -111,10 +104,8 @@ const sendAdminEmail = async ({ name, email, amount, reason, withdrawalID }) => 
 
 </body>
 </html>`
-    };
+})
 
-    const sendMailAction = await botask.sendMail(mailOptions);
-    console.log("Subscription confirmation email sent successfully:", sendMailAction.response);
   } catch (error) {
     console.error("Error sending subscription confirmation email:", error);
     throw new Error("Subscription confirmation email could not be sent.");
@@ -122,3 +113,7 @@ const sendAdminEmail = async ({ name, email, amount, reason, withdrawalID }) => 
 };
 
 module.exports = sendAdminEmail;
+
+//CONSIDERING RATE LIMITS, THIS FUNCTION IS DESIGNED TO 
+// SEND EMAILS TO THE ADMIN WHEN A USER INITIATES A WITHDRAWAL REQUEST. 
+// IT USES THE RESEND SERVICE FOR EMAIL DELIVERY.
