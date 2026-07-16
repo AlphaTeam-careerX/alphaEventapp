@@ -578,6 +578,10 @@ app.post("/buyTicket-initiate/:eventID", async (req, res) => {
     // console.log(req.path)
     const { tickets, email,userName,phoneNumber, totalPurchase } = req.body;
 
+    console.log("user name:", req.body.userName);
+    if(!req.body.userName || req.body.userName.trim() === "") {
+      console.log("User name is missing or empty.");
+    }
     //if (!eventID || !tickets || !email) return res.status(400).json({ msg: "Missing required fields" });
 
     const findevntID = await eventModel.findOne({ eventID });
