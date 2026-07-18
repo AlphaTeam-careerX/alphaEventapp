@@ -181,61 +181,64 @@ const orgMYeventsDashDetaisFXN=async (req, res) => {
     res.status(500).json({ msg: error.message });
   }
 };
-const ticketSoldOverviewDashDetaisFXN=async (req, res) => {
-  try {
-    const { userID, eventID } = req.params;
 
+const ticketSoldOverviewDashDetaisFXN = async (req, res) => {
+  try {
+    const { userID } = req.params;
+
+    
     const findUser = await indiOrgModel.findOne({ userID });
     if (!findUser) {
       return res.status(404).json({ msg: "USER NOT FOUND" });
     }
 
-    const event = await eventModel.findOne({ userID:userID });
-    if (!event) {
-      return res.status(404).json({ msg: "EVENT NOT FOUND" });
+  
+    
+    const eventsArray = await eventModel.find({ userID: userID, ticketsSold: { $gt: 0 } }).lean();
+    console.log("events found:", eventsArray);
+    
+   
+    if (!eventsArray || eventsArray.length === 0) {
+      return res.status(404).json({ msg: "NO EVENTS FOUND FOR THIS USER" });
     }
 
-    const orgID = event.userID.toString();
-    const findUsername = await allUserModel.findOne({ userID: orgID });
+    const findUsername = await allUserModel.findOne({ userID: userID });
+    const organizerName = findUsername ? findUsername.username : "Unknown Organizer";
 
-    const startdte = new Date(event.eventDate.eventStart).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
+    
+    const eventsData = eventsArray.map(event => {
+      
+      let eventDate = "Date TBD";
+      if (event.eventDate && event.eventDate.eventStart) {
+        eventDate = moment(event.eventDate.eventStart).format("MMMM D YYYY");
+      }
+
+      let ttime = "Time TBD";
+      if (event.eventTime && event.eventTime.start && event.eventTime.startClock) {
+        ttime = `${event.eventTime.start} ${event.eventTime.startClock}`;
+      }
+
+      return {
+        eventID: event.eventID,
+        eventTitle: event.eventTitle || "Untitled Event",
+        eventImgURL: event.eventImgURL || "",
+        eventDate: eventDate,
+        eventTime: ttime,
+        ticketQtyCount: event.eventCapacity || 0,
+        ticketsSold: event.ticketsSold || 0,
+        organizerName: organizerName
+      };
     });
 
-    const enddte = new Date(event.eventDate.eventEnd).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
+    // 5. Return the full array of formatted data
+    return res.status(200).json({ 
+      msg: "SUCCESSFUL", 
+      data: eventsData // This is now an array containing all events
     });
 
-    const eventDate = `${moment(startdte).format("MMMM D YYYY")}`// - ${moment(enddte).format("MMMM D YYYY")}`;
-
-    const ttime = `${event.eventTime.start} ${event.eventTime.startClock}`// - ${event.eventTime.end} ${event.eventTime.endClock}`;
-
-    const eventData = {
-      eventID: event.eventID,
-      eventTitle: event.eventTitle,
-      eventImgURL: event.eventImgURL,
-      eventDate: eventDate,
-      eventTime: ttime,
-      // venueInformation: event.venueInformation.address
-      //   ? event.venueInformation.address
-      //   : event.venueInformation.url,
-      ticketQtyCount: event.eventCapacity,
-      ticketsSold: event.ticketsSold,
-      // imageURL: event.eventImgURL,
-      // eventDescription: event.eventDesc,
-    };
-
-    res.status(200).json({
-      msg: "SUCCESSFUL",
-      data: eventData,
-    });
   } catch (error) {
     console.error("Error fetching individual organizer event details:", error);
-    res.status(500).json({ msg: error.message });
+    return res.status(500).json({ msg: error.message });
   }
 };
 
