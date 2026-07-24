@@ -7,13 +7,25 @@ const eventModel = require("../model/eventsDB");
 //TO BE IMPLEMENTED SOON
 const checkSession = async (req, res, next) => {
   try {
-    // const sessToken = req.headers["authorization"];
+    const rawSessToken = req.headers["authorization"];
+    const decodedToken = rawSessToken ? rawSessToken.split(" ")[1] : null;
 
     if(req.path.startsWith("/login") ||
         req.path.startsWith("/signup") ||
         req.path.startsWith("/auth") ||
         req.path.startsWith("/buyTicket-initiate")
       ){return next()}
+    //decode the token and check if it exists in the session collection
+
+    const decoded = jwt.verify(decodedToken, process.env.refresTk);
+
+    //is jwt expired check
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (decoded.exp < currentTime) {
+      return res.status(401).json({ msg: "Session expired" });
+      res.redirect(`https://myalvent.com/LogIn?msg=Session expired`);
+    }
+
     // if (!sessToken) {
     //   return res.status(401).json({ msg: "Session token required" });
     // }
@@ -39,6 +51,7 @@ const checkSession = async (req, res, next) => {
 
 const logActivity = async (req, res, next) => {
   try {
+    console.log(" req:", req.session);
     if (req.session) {
       await activityModel.create({
         userID: req.session.userID|| "Anonymous",

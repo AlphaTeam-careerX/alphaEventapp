@@ -13,13 +13,30 @@ exports.authFxn = async (req, res, next) => {
     }
 
     const token = tk.split(" ")[1];
+    let decoded;
+    try {
+    decoded = jwt.verify(token, process.env.refresTk);
+    } catch (err) {
+      if (err.name === "TokenExpiredError") {
+        return res.status(401).json({ message: "Token expired" });
+      }
+      return res.status(401).json({ message: "Invalid token" });
+    }
+      
+      // console.log(decoded.email)
 
-    const decoded = jwt.verify(token, process.env.refresTk);
-    console.log(decoded.email);
+    if(req.path.startsWith("/login") ||
+        req.path.startsWith("/signup") ||
+        req.path.startsWith("/auth") ||
+        req.path.startsWith("/buyTicket-initiate")
+      ){return next()}
+
     if (!decoded) {
       return res.status(401).json({ message: "Invalid login details" });
     }
+
     const userMail = decoded.email;
+    console.log("Decoded Email:", userMail);
     const user = await allUserModel.findOne({ email: userMail });
 
     if (!user) {

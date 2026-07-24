@@ -1,5 +1,6 @@
 const {getDashboardFXN} = require("../controllers/dashbdgreetings")
 const {authFxn} = require('../middleware/auth');
+// const {logActivity}= require('../middleware/sessionChecker')
 const express = require("express")
 const router = express.Router()
 
