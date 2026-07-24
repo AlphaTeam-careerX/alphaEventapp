@@ -17,10 +17,7 @@ const loginFXN=async(req,res)=>{
     if (!emailregex.test(email)) {
         return res.status(400).json({ msg: "Invalid email format" });
     }
-    // const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-    // if (!passwordRegex.test(passWd)) {
-    //     return res.status(400).json({ msg: "Password must be at least 8 characters long and contain at least one letter and one number" });
-    // }
+
 
     const existinUser = await allUserModel.findOne({email:email})
     
@@ -39,7 +36,7 @@ const loginFXN=async(req,res)=>{
       const token = jwt.sign(
         { email: email },
         process.env.refresTk,
-        { expiresIn: '1h' },
+        { expiresIn: '30m' },
       );
     const gensessionID = function generateSessionID() {
       return Math.floor(Math.random() * 10000);
